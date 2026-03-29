@@ -5,6 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TipFlow — Staff Contribution Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script type="module">
+// ═══════════════════════════════════════════════
+//  FIREBASE SETUP
+// ═══════════════════════════════════════════════
+import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDMupFmkCppBnNMeWnbKNTRlyX3nR2TOic",
+  authDomain:        "one-more-try-f1050.firebaseapp.com",
+  projectId:         "one-more-try-f1050",
+  storageBucket:     "one-more-try-f1050.firebasestorage.app",
+  messagingSenderId: "530126899027",
+  appId:             "1:530126899027:web:4f0931d63d71bc106ec3a6"
+};
+
+const _fbApp = initializeApp(firebaseConfig);
+const _db    = getFirestore(_fbApp);
+const _dataRef    = () => doc(_db, 'myData', 'latest');
+const _passcodeRef = () => doc(_db, 'myData', 'passcode');
+
+// Expose Firebase helpers onto window so the main script can call them
+window._fbSaveData = async (storeObj) => {
+  await setDoc(_dataRef(), { ...storeObj, _savedAt: new Date().toISOString() });
+};
+
+window._fbLoadData = async () => {
+  const snap = await getDoc(_dataRef());
+  return snap.exists() ? snap.data() : null;
+};
+
+window._fbSavePasscode = async (code) => {
+  await setDoc(_passcodeRef(), { passcode: code, _savedAt: new Date().toISOString() });
+};
+
+window._fbLoadPasscode = async () => {
+  const snap = await getDoc(_passcodeRef());
+  return snap.exists() ? snap.data().passcode : null;
+};
+
+// Signal that Firebase is ready
+window._fbReady = true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -213,6 +257,7 @@
   .g2 { grid-template-columns: repeat(2, 1fr); }
   .g3 { grid-template-columns: repeat(3, 1fr); }
   .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g5 { grid-template-columns: repeat(5, 1fr); }
 
   /* ─── STAT CARDS ─── */
   .stat-card {
@@ -778,7 +823,7 @@
 
     .menu-toggle { display: flex; }
 
-    .g4, .g3 { grid-template-columns: repeat(2, 1fr); }
+    .g4, .g5, .g3 { grid-template-columns: repeat(2, 1fr); }
     .g2 { grid-template-columns: 1fr; }
 
     .page { padding: 20px 16px; }
@@ -797,7 +842,7 @@
   }
 
   @media (max-width: 480px) {
-    .g4, .g3, .g2 { grid-template-columns: 1fr; }
+    .g4, .g5, .g3, .g2 { grid-template-columns: 1fr; }
   }
 
   /* ─── UTILS ─── */
@@ -839,6 +884,115 @@
     width: 7px; height: 7px;
     border-radius: 50%;
     display: inline-block;
+  }
+
+  /* ─── MODE TOGGLE ─── */
+  #modeBanner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 32px;
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    transition: all 0.25s;
+  }
+
+  #modeBanner.view-mode {
+    background: rgba(245,158,11,0.08);
+    border-bottom-color: rgba(245,158,11,0.25);
+    color: var(--amber);
+  }
+
+  #modeBanner.edit-mode {
+    background: rgba(34,211,165,0.08);
+    border-bottom-color: rgba(34,211,165,0.25);
+    color: var(--green);
+  }
+
+  .mode-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+  }
+
+  .mode-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .view-mode .mode-dot { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  .edit-mode .mode-dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: modePulse 2s infinite; }
+
+  @keyframes modePulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .mode-actions { display: flex; gap: 8px; align-items: center; }
+
+  .btn-mode-enter {
+    background: rgba(245,158,11,0.15);
+    border: 1px solid rgba(245,158,11,0.4);
+    color: var(--amber);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-mode-enter:hover { background: rgba(245,158,11,0.28); }
+
+  .btn-mode-exit {
+    background: rgba(34,211,165,0.12);
+    border: 1px solid rgba(34,211,165,0.35);
+    color: var(--green);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-mode-exit:hover { background: rgba(34,211,165,0.22); }
+
+  /* View-mode disabled state — subtle visual cue */
+  .view-mode-disabled {
+    opacity: 0.38 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    filter: grayscale(60%);
+    user-select: none;
+  }
+
+  /* View-mode overlay blocker on forms */
+  .view-mode-block {
+    position: relative;
+  }
+
+  .view-mode-block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    cursor: not-allowed;
+    border-radius: var(--radius);
+  }
+
+  /* Mode passcode modal */
+  #modePasscodeModal .modal {
+    width: 380px;
   }
 
   /* ─── DELETE OPTION CARDS ─── */
@@ -892,6 +1046,23 @@
 
 <div class="overlay-bg" id="overlayBg" onclick="closeSidebar()"></div>
 
+<!-- FIREBASE LOADING OVERLAY -->
+<div id="loadingOverlay" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:18px">
+  <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(135deg,#6c63ff,#22d3a5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">TipFlow</div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dotPulse 1.2s infinite 0s"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dotPulse 1.2s infinite 0.2s"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dotPulse 1.2s infinite 0.4s"></div>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);letter-spacing:0.5px">Loading from cloud…</div>
+</div>
+<style>
+@keyframes dotPulse {
+  0%,80%,100% { transform:scale(0.6); opacity:0.4; }
+  40% { transform:scale(1); opacity:1; }
+}
+</style>
+
 <!-- SIDEBAR -->
 <aside id="sidebar">
   <div class="sidebar-brand">
@@ -937,9 +1108,22 @@
     <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3)" id="topbarDate"></div>
   </div>
 
+  <!-- MODE BANNER -->
+  <div id="modeBanner" class="view-mode">
+    <div class="mode-indicator">
+      <span class="mode-dot"></span>
+      <span id="modeLabel">🔒 View Mode — Read Only</span>
+    </div>
+    <div class="mode-actions">
+      <span id="modeHint" style="font-size:11px;opacity:0.7">Data is protected. Enter Edit Mode to make changes.</span>
+      <button class="btn-mode-enter" id="btnEnterEdit" onclick="promptEnterEditMode()">✎ Enter Edit Mode</button>
+      <button class="btn-mode-exit" id="btnExitEdit" onclick="exitEditMode()" style="display:none">✕ Back to View Mode</button>
+    </div>
+  </div>
+
   <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
-    <div class="grid g4 mb-4" id="dashStats"></div>
+    <div class="grid g5 mb-4" id="dashStats"></div>
     <div class="grid g3 mt-4" id="dashCats"></div>
     <div class="card mt-6">
       <div class="section-header">
@@ -1188,16 +1372,72 @@
 
 <!-- ADD WAITER MODAL -->
 <div class="modal-overlay" id="addWaiterModal">
-  <div class="modal">
+  <div class="modal" style="width:460px">
     <div class="modal-title">Add New Waiter</div>
+
     <div class="form-group">
       <label>Waiter Name</label>
       <input type="text" id="newWaiterName" placeholder="e.g. Rajesh Kumar"
-        onkeydown="if(event.key==='Enter')saveNewWaiter()" />
+        onkeydown="if(event.key==='Enter')document.getElementById('newWaiterJoinDate').focus()" />
     </div>
-    <div class="info-banner" style="margin-top:12px">
-      <span>ℹ</span> Join date will be set to today automatically.
+
+    <div class="form-group">
+      <label>Join Date</label>
+      <input type="date" id="newWaiterJoinDate" />
+      <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:6px">
+        Leave blank to use today's date
+      </div>
     </div>
+
+    <div style="margin-bottom:6px">
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        Initial Pending Balances
+        <span style="font-family:'DM Sans',sans-serif;font-size:11px;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.3);border-radius:20px;padding:2px 8px;font-weight:500;letter-spacing:0">OPTIONAL</span>
+      </label>
+      <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:12px;line-height:1.6">
+        Past dues owed before using TipFlow — enter per category.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--pickup);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">🚗 Pickup</div>
+          <input type="number" id="newWaiterInitPickup" placeholder="0" min="0"
+            oninput="updateInitPendingPreview()" style="text-align:center" />
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--hk);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">🧹 Housekeeping</div>
+          <input type="number" id="newWaiterInitHk" placeholder="0" min="0"
+            oninput="updateInitPendingPreview()" style="text-align:center" />
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--wp);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">🧽 Wiping</div>
+          <input type="number" id="newWaiterInitWp" placeholder="0" min="0"
+            oninput="updateInitPendingPreview()"
+            onkeydown="if(event.key==='Enter')saveNewWaiter()" style="text-align:center" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Live preview strip -->
+    <div id="initPendingPreview" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:4px;font-size:13px">
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Opening Balance Summary</div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">🚗 Pickup Pending</span>
+        <span id="initPendingPickupVal" style="font-family:'DM Mono',monospace;color:var(--pickup)">₹0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">🧹 Housekeeping Pending</span>
+        <span id="initPendingHkVal" style="font-family:'DM Mono',monospace;color:var(--hk)">₹0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">🧽 Wiping Pending</span>
+        <span id="initPendingWpVal" style="font-family:'DM Mono',monospace;color:var(--wp)">₹0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0 0">
+        <span style="color:var(--text2);font-weight:600">Total Opening Pending</span>
+        <span id="initPendingTotalVal" style="font-family:'DM Mono',monospace;color:var(--amber);font-weight:600">₹0</span>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('addWaiterModal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveNewWaiter()">Add Waiter</button>
@@ -1412,6 +1652,36 @@
   </div>
 </div>
 
+<!-- MODE PASSCODE MODAL -->
+<div class="modal-overlay" id="modePasscodeModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+      <span>🔓</span> Enter Edit Mode
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+      Enter the admin passcode to unlock Edit Mode and make changes to data.
+    </div>
+    <div class="form-group">
+      <label>Admin Passcode</label>
+      <div style="position:relative">
+        <input type="password" id="modePasscodeInput" placeholder="Enter passcode"
+          onkeydown="if(event.key==='Enter')verifyModePasscode()"
+          style="padding-right:44px;letter-spacing:4px;font-size:18px" />
+        <button type="button" onclick="toggleModePasscodeVis()"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px"
+          id="modePasscodeVisBtn">👁</button>
+      </div>
+    </div>
+    <div id="modePasscodeError" style="display:none" class="warn-banner">
+      <span>✕</span> <span id="modePasscodeErrorMsg">Incorrect passcode.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modePasscodeModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="verifyModePasscode()">🔓 Unlock Edit Mode</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -1432,21 +1702,36 @@ let store = {
 let deleteTargetId = null;
 
 // ═══════════════════════════════════════════════
-//  PERSISTENCE
+//  PERSISTENCE  (Firebase Firestore)
 // ═══════════════════════════════════════════════
+
+// Debounce timer so rapid successive save() calls collapse into one write
+let _saveTimer = null;
+
 function save() {
-  localStorage.setItem('tipflow_data', JSON.stringify(store));
+  // Debounce: wait 400 ms after the last call before writing to Firestore
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    try {
+      await window._fbSaveData(store);
+    } catch (e) {
+      console.error('Firestore save error:', e);
+      showToast('⚠ Cloud save failed — check connection', 'warning');
+    }
+  }, 400);
 }
 
-function load() {
-  const raw = localStorage.getItem('tipflow_data');
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      store = { withdrawals: { pickup: 0, hk: 0, wp: 0 }, deleted_waiters: [], ...parsed };
-    } catch (e) {
-      console.error('Load error', e);
+async function load() {
+  try {
+    const data = await window._fbLoadData();
+    if (data) {
+      // Strip internal Firestore timestamp before merging
+      const { _savedAt, ...rest } = data;
+      store = { withdrawals: { pickup: 0, hk: 0, wp: 0 }, deleted_waiters: [], ...rest };
     }
+  } catch (e) {
+    console.error('Firestore load error:', e);
+    showToast('⚠ Could not load cloud data — check connection', 'error');
   }
 }
 
@@ -1722,6 +2007,11 @@ function getTotalPending() {
     s + (w.pending_pickup || 0) + (w.pending_hk || 0) + (w.pending_wp || 0), 0);
 }
 
+function getTotalAdvance() {
+  // Sum of all advance balances = total cash sitting in collectors' hands
+  return store.waiters.reduce((s, w) => s + (w.advance || 0), 0);
+}
+
 // ═══════════════════════════════════════════════
 //  WAITER MANAGEMENT
 // ═══════════════════════════════════════════════
@@ -1731,8 +2021,30 @@ function genId() {
 
 function showAddWaiterModal() {
   document.getElementById('newWaiterName').value = '';
+  document.getElementById('newWaiterJoinDate').value = '';
+  document.getElementById('newWaiterInitPickup').value = '';
+  document.getElementById('newWaiterInitHk').value = '';
+  document.getElementById('newWaiterInitWp').value = '';
+  document.getElementById('initPendingPreview').style.display = 'none';
   openModal('addWaiterModal');
   setTimeout(() => document.getElementById('newWaiterName').focus(), 100);
+}
+
+function updateInitPendingPreview() {
+  const pickup = parseFloat(document.getElementById('newWaiterInitPickup').value) || 0;
+  const hk     = parseFloat(document.getElementById('newWaiterInitHk').value)     || 0;
+  const wp     = parseFloat(document.getElementById('newWaiterInitWp').value)     || 0;
+  const total  = pickup + hk + wp;
+  const preview = document.getElementById('initPendingPreview');
+  if (total > 0) {
+    document.getElementById('initPendingPickupVal').textContent = `₹${pickup.toLocaleString('en-IN')}`;
+    document.getElementById('initPendingHkVal').textContent     = `₹${hk.toLocaleString('en-IN')}`;
+    document.getElementById('initPendingWpVal').textContent     = `₹${wp.toLocaleString('en-IN')}`;
+    document.getElementById('initPendingTotalVal').textContent  = `₹${total.toLocaleString('en-IN')}`;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
 }
 
 function saveNewWaiter() {
@@ -1740,39 +2052,63 @@ function saveNewWaiter() {
   if (!name) { showToast('Enter waiter name', 'error'); return; }
 
   const todayStr = today();
+  const joinDateInput = document.getElementById('newWaiterJoinDate').value;
+  const joinDate = joinDateInput || todayStr;
+
+  const initPickup = parseFloat(document.getElementById('newWaiterInitPickup').value) || 0;
+  const initHk     = parseFloat(document.getElementById('newWaiterInitHk').value)     || 0;
+  const initWp     = parseFloat(document.getElementById('newWaiterInitWp').value)      || 0;
+
+  if (initPickup < 0 || initHk < 0 || initWp < 0) {
+    showToast('Initial pending values cannot be negative', 'error'); return;
+  }
+
+  const initTotal = initPickup + initHk + initWp;
+
   const newWaiter = {
     id: genId(),
     name,
-    joinDate: todayStr,
+    joinDate,
     lastPaidDate: null,
     paid: 0,
-    pending_pickup: 0,
-    pending_hk: 0,
-    pending_wp: 0,
+    pending_pickup: initPickup,
+    pending_hk:     initHk,
+    pending_wp:     initWp,
     advance: 0
   };
   store.waiters.push(newWaiter);
 
-  // Log staff event
-  store.transactions.unshift({
+  // Log staff event — include initial pending breakdown for history transparency
+  const txn = {
     id: genId(),
     type: 'waiter_added',
     date: new Date().toISOString(),
     waiterId: newWaiter.id,
     waiterName: name,
-    joinDate: todayStr
-  });
+    joinDate
+  };
+  if (initTotal > 0) {
+    txn.initPending = initTotal;
+    txn.initPendingPickup = initPickup;
+    txn.initPendingHk     = initHk;
+    txn.initPendingWp     = initWp;
+  }
+  store.transactions.unshift(txn);
 
   save();
   closeModal('addWaiterModal');
-  showToast(`${name} added successfully`, 'success');
+
+  const pendingNote = initTotal > 0 ? ` — ₹${initTotal} opening pending added` : '';
+  showToast(`${name} added successfully${pendingNote}`, 'success');
   renderAll();
 }
 
 // ─── DELETE WAITER — multi-step ───
-// Passcode is stored in localStorage so manager can change it in-app
+// Passcode is stored in Firestore; cached in memory after load
+let _cachedPasscode = '1234';
+
 function getPasscode() {
-  return localStorage.getItem('tipflow_passcode') || '1234';
+  return _cachedPasscode;
 }
 let deleteMode = null; // 'keep' | 'all'
 
@@ -1952,6 +2288,8 @@ function renderAll() {
   renderCollectionWaiters();
   renderWithdrawal();
   renderHistory();
+  // Re-apply mode UI after every render (dynamic elements like delete buttons)
+  if (typeof applyModeUI === 'function') applyModeUI();
 }
 
 function renderDashboard() {
@@ -1959,6 +2297,8 @@ function renderDashboard() {
   const totalPending = getTotalPending();
   const totalBalance = getCategoryBalance('pickup') + getCategoryBalance('hk') + getCategoryBalance('wp');
   const totalWithdrawn = getCategoryWithdrawn('pickup') + getCategoryWithdrawn('hk') + getCategoryWithdrawn('wp');
+  const totalAdvance = getTotalAdvance();
+  const advanceCount = store.waiters.filter(w => (w.advance || 0) > 0).length;
 
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card" style="--accent-color:var(--green)">
@@ -1984,6 +2324,12 @@ function renderDashboard() {
       <div class="stat-value">₹${totalWithdrawn.toLocaleString('en-IN')}</div>
       <div class="stat-sub">${store.transactions.filter(t=>t.type==='withdrawal').length} withdrawals</div>
       <div class="stat-icon">⊖</div>
+    </div>
+    <div class="stat-card" style="--accent-color:var(--blue)">
+      <div class="stat-label">Advance with Collector</div>
+      <div class="stat-value" style="color:var(--blue)">₹${totalAdvance.toLocaleString('en-IN')}</div>
+      <div class="stat-sub">${advanceCount} waiter${advanceCount !== 1 ? 's' : ''} holding advance</div>
+      <div class="stat-icon" style="opacity:0.3">⊕</div>
     </div>
   `;
 
@@ -2301,11 +2647,22 @@ function renderHistory() {
 
     // ── Waiter Added ──
     if (t.type === 'waiter_added') {
+      const initTotal = t.initPending || 0;
+      const initBreakdown = initTotal > 0 ? (() => {
+        const parts = [];
+        if (t.initPendingPickup > 0) parts.push(`🚗 ₹${t.initPendingPickup}`);
+        if (t.initPendingHk     > 0) parts.push(`🧹 ₹${t.initPendingHk}`);
+        if (t.initPendingWp     > 0) parts.push(`🧽 ₹${t.initPendingWp}`);
+        return parts.join(' • ');
+      })() : '';
+      const initPendingBadge = initTotal > 0
+        ? `<span class="badge badge-amber" style="margin-left:8px">₹${initTotal.toLocaleString('en-IN')} opening balance</span>`
+        : '';
       return `
         <div class="history-item" style="border-left:3px solid var(--green)">
           <div class="history-info">
-            <div class="history-title" style="color:var(--green)">👤 Waiter Added — ${t.waiterName}</div>
-            <div class="history-meta">${formatDateTime(t.date)} • Join date: ${formatDate(t.joinDate)}</div>
+            <div class="history-title" style="color:var(--green)">👤 Waiter Added — ${t.waiterName}${initPendingBadge}</div>
+            <div class="history-meta">${formatDateTime(t.date)} • Join date: ${formatDate(t.joinDate)}${initBreakdown ? ' • ' + initBreakdown : ''}</div>
           </div>
           <div><span class="badge badge-green">ADDED</span></div>
         </div>`;
@@ -2758,8 +3115,23 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
-function init() {
-  load();
+async function init() {
+  // Show loading overlay while fetching from Firestore
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.style.display = 'flex';
+
+  try {
+    // Load passcode from Firestore first
+    const savedPasscode = await window._fbLoadPasscode();
+    if (savedPasscode) _cachedPasscode = savedPasscode;
+
+    // Load main store data
+    await load();
+  } catch(e) {
+    console.error('Init load error:', e);
+  }
+
+  if (overlay) overlay.style.display = 'none';
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
@@ -2767,6 +3139,8 @@ function init() {
   document.getElementById('topbarDate').textContent = dateStr;
 
   renderAll();
+  // Apply initial View Mode state after first render
+  if (typeof applyModeUI === 'function') applyModeUI();
 }
 
 // ═══════════════════════════════════════════════
@@ -2856,7 +3230,11 @@ function saveNewPasscode() {
   if (newCode !== confirm)  return showErr('New passcode and confirmation do not match.');
   if (newCode === current)  return showErr('New passcode must be different from current.');
 
-  localStorage.setItem('tipflow_passcode', newCode);
+  _cachedPasscode = newCode;
+  window._fbSavePasscode(newCode).catch(e => {
+    console.error('Passcode save error:', e);
+    showToast('⚠ Passcode save failed — check connection', 'warning');
+  });
   successEl.style.display = 'flex';
   document.getElementById('cpCurrent').value = '';
   document.getElementById('cpNew').value = '';
@@ -2868,7 +3246,184 @@ function saveNewPasscode() {
   setTimeout(closeChangePasscodeModal, 1200);
 }
 
-init();
+// ═══════════════════════════════════════════════
+//  MODE TOGGLE SYSTEM
+// ═══════════════════════════════════════════════
+let _isEditMode = false;
+
+function isEditMode() { return _isEditMode; }
+
+// IDs of buttons/elements that must be disabled in View Mode
+const EDIT_ONLY_BTN_IDS = [
+  'btnAddWaiterPage',      // "Add Waiter" button on Waiters page
+  'btnRecordPayment',      // "Record Payment" button on Collection page
+  'btnWithdraw',           // "Withdraw" button on Withdrawal page
+  'btnImportSidebar',      // Import CSV sidebar button
+];
+
+// Apply/remove view-mode disabled state across the UI
+function applyModeUI() {
+  const banner = document.getElementById('modeBanner');
+  const modeLabel = document.getElementById('modeLabel');
+  const modeHint = document.getElementById('modeHint');
+  const btnEnter = document.getElementById('btnEnterEdit');
+  const btnExit = document.getElementById('btnExitEdit');
+
+  if (_isEditMode) {
+    banner.className = 'edit-mode';
+    modeLabel.textContent = '✎ Edit Mode — Admin Active';
+    modeHint.textContent = 'All features unlocked. Click "Back to View Mode" when done.';
+    btnEnter.style.display = 'none';
+    btnExit.style.display = '';
+  } else {
+    banner.className = 'view-mode';
+    modeLabel.textContent = '🔒 View Mode — Read Only';
+    modeHint.textContent = 'Data is protected. Enter Edit Mode to make changes.';
+    btnEnter.style.display = '';
+    btnExit.style.display = 'none';
+  }
+
+  // Disable/enable: Add Waiter button (Waiters page header)
+  const addWaiterBtns = document.querySelectorAll('#page-waiters .btn-primary');
+  addWaiterBtns.forEach(btn => {
+    if (_isEditMode) btn.classList.remove('view-mode-disabled');
+    else btn.classList.add('view-mode-disabled');
+  });
+
+  // Disable/enable: Record Payment button (Collection page)
+  const payBtn = document.querySelector('#page-collection .btn-primary.btn-full');
+  if (payBtn) {
+    if (_isEditMode) payBtn.classList.remove('view-mode-disabled');
+    else payBtn.classList.add('view-mode-disabled');
+  }
+
+  // Disable/enable: Quick amount buttons
+  document.querySelectorAll('.quick-btn').forEach(btn => {
+    if (_isEditMode) btn.classList.remove('view-mode-disabled');
+    else btn.classList.add('view-mode-disabled');
+  });
+
+  // Disable/enable: Collection form inputs
+  ['collWaiter', 'collAmount', 'collNote'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !_isEditMode;
+  });
+
+  // Disable/enable: Withdrawal form inputs + button
+  ['wdCategory', 'wdAmount', 'wdNote'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !_isEditMode;
+  });
+  const wdBtn = document.querySelector('#page-withdrawal .btn-primary');
+  if (wdBtn) {
+    if (_isEditMode) wdBtn.classList.remove('view-mode-disabled');
+    else wdBtn.classList.add('view-mode-disabled');
+  }
+
+  // Disable/enable: Import CSV sidebar button
+  const importBtn = document.querySelector('.sidebar-footer button[onclick*="showImportModal"]');
+  if (importBtn) {
+    if (_isEditMode) importBtn.classList.remove('view-mode-disabled');
+    else importBtn.classList.add('view-mode-disabled');
+  }
+
+  // Disable/enable: Delete buttons in waiter table (re-rendered dynamically, handled in renderWaiters)
+  document.querySelectorAll('#waiterTableBody .btn-danger').forEach(btn => {
+    if (_isEditMode) btn.classList.remove('view-mode-disabled');
+    else btn.classList.add('view-mode-disabled');
+  });
+}
+
+function promptEnterEditMode() {
+  document.getElementById('modePasscodeInput').value = '';
+  document.getElementById('modePasscodeError').style.display = 'none';
+  document.getElementById('modePasscodeInput').type = 'password';
+  document.getElementById('modePasscodeVisBtn').textContent = '👁';
+  openModal('modePasscodeModal');
+  setTimeout(() => document.getElementById('modePasscodeInput').focus(), 120);
+}
+
+function verifyModePasscode() {
+  const entered = document.getElementById('modePasscodeInput').value;
+  const errEl = document.getElementById('modePasscodeError');
+  const errMsg = document.getElementById('modePasscodeErrorMsg');
+
+  if (!entered) {
+    errMsg.textContent = 'Passcode cannot be empty.';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  if (entered === getPasscode()) {
+    errEl.style.display = 'none';
+    _isEditMode = true;
+    closeModal('modePasscodeModal');
+    applyModeUI();
+    showToast('Edit Mode unlocked', 'success');
+  } else {
+    errMsg.textContent = 'Incorrect passcode. Try again.';
+    errEl.style.display = 'flex';
+    document.getElementById('modePasscodeInput').value = '';
+    document.getElementById('modePasscodeInput').focus();
+  }
+}
+
+function exitEditMode() {
+  _isEditMode = false;
+  applyModeUI();
+  showToast('Switched to View Mode', 'info');
+}
+
+function toggleModePasscodeVis() {
+  const inp = document.getElementById('modePasscodeInput');
+  const btn = document.getElementById('modePasscodeVisBtn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+// ── Guard wrappers: block data-write functions in View Mode ──
+const _origAddPayment = addPayment;
+addPayment = function() {
+  if (!_isEditMode) { showToast('🔒 Enter Edit Mode to record payments', 'warning'); return; }
+  _origAddPayment.apply(this, arguments);
+};
+
+const _origAddWithdrawal = addWithdrawal;
+addWithdrawal = function() {
+  if (!_isEditMode) { showToast('🔒 Enter Edit Mode to add withdrawals', 'warning'); return; }
+  _origAddWithdrawal.apply(this, arguments);
+};
+
+const _origSaveNewWaiter = saveNewWaiter;
+saveNewWaiter = function() {
+  if (!_isEditMode) { showToast('🔒 Enter Edit Mode to add waiters', 'warning'); return; }
+  _origSaveNewWaiter.apply(this, arguments);
+};
+
+const _origDeleteWaiter = deleteWaiter;
+deleteWaiter = function() {
+  if (!_isEditMode) { showToast('🔒 Enter Edit Mode to delete waiters', 'warning'); return; }
+  _origDeleteWaiter.apply(this, arguments);
+};
+
+const _origShowImportModal = showImportModal;
+showImportModal = function() {
+  if (!_isEditMode) { showToast('🔒 Enter Edit Mode to import data', 'warning'); return; }
+  _origShowImportModal.apply(this, arguments);
+};
+
+const _origShowAddWaiterModal = showAddWaiterModal;
+showAddWaiterModal = function() {
+  if (!_isEditMode) { showToast('🔒 Enter Edit Mode to add waiters', 'warning'); return; }
+  _origShowAddWaiterModal.apply(this, arguments);
+};
+
+// Wait for the Firebase module script to finish initializing before running init()
+if (window._fbReady) {
+  init();
+} else {
+  window.addEventListener('fbReady', () => init());
+}
 </script>
 </body>
 </html>
